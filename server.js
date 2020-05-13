@@ -3,7 +3,7 @@ const express = require("express");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const mozlog = require("mozlog")({
-  app: "dockerflow-demo"
+  app: "topsites-proxy"
 });
 const log = mozlog("general");
 
@@ -23,7 +23,7 @@ const getConfig = () => {
   try {
     config = JSON.parse(process.env.CONFIG);
   } catch (ex) {
-    log.error("server", {msg: "invalid config: " ex.message});
+    log.error("server", {msg: "invalid config: " + ex.message});
   }
   return config;
 }
