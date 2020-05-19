@@ -13,11 +13,26 @@ const app = express();
 const proxy = httpProxy.createProxyServer({});
 
 const CONFIG = {
-  AMZN_2020_1: {
+  amzn_2020_1: {
     url: `http://localhost:${process.env.PORT}/test`,
     query: {
       key: process.env["AMZN_2020_1_KEY"] || "test",
-      cuid: "AMZN_2020_1"
+      cuid: "amzn_2020_1"
+    }
+  },
+  amzn_2020_s1: {
+    url: "http://api.viglink.com/api/link",
+    query: {
+      out: "https://www.amazon.com",
+      key: "2c9e8c5141dede8bb35b6bb8fee4d150",
+      format: "json"
+    }
+  },
+  amzn_2020_a1: {
+    url: "http://api.admarketplace.com/api/link",
+    query: {
+      out: "https://www.amazon.com",
+      key: "xxx"
     }
   }
 };
@@ -41,6 +56,7 @@ app.use("/cid/:cid", (req, res) => {
     return;
   }
 
+  cid = cid.toLowerCase();
   let campaign = CONFIG[cid];
   if (!campaign) {
     log.error("server", {msg: "invalid campaign identifier: " + cid});
@@ -88,7 +104,7 @@ if (process.env.PORT) {
       // If no valid campaign identifier was passed in, e.g. 'TEST=yes', then
       // we'll take the last defined cid from the CONFIG above.
       if (!CONFIG[cid]) {
-        cid = Object.getOwnPropertyNames(CONFIG).pop();
+        cid = Object.getOwnPropertyNames(CONFIG).shift();
       }
       require("http").request({
         host: "localhost",
