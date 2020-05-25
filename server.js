@@ -1,6 +1,7 @@
 const fs = require("fs");
 const express = require("express");
 const httpProxy = require("http-proxy");
+const sentry = require("@sentry/node");
 
 const mozlog = require("mozlog")({
   app: "topsites-proxy"
@@ -11,6 +12,7 @@ const verfile = __dirname + "/version.json";
 
 const app = express();
 const proxy = httpProxy.createProxyServer({});
+sentry.init({ dsn: "https://b311ce518703482ba73a2fd5d59cf95f@sentry.prod.mozaws.net/529" })
 
 const CONFIG = {
   amzn_2020_1: {
@@ -24,7 +26,7 @@ const CONFIG = {
     url: "http://api.viglink.com/api/link",
     query: {
       out: "https://www.amazon.com",
-      key: "2c9e8c5141dede8bb35b6bb8fee4d150",
+      key: process.env["AMZN_2020_S1_KEY"] || "NOKEY",
       format: "json"
     }
   },
@@ -32,7 +34,7 @@ const CONFIG = {
     url: "http://api.admarketplace.com/api/link",
     query: {
       out: "https://www.amazon.com",
-      key: "xxx"
+      key: process.env["AMZN_2020_A1_KEY"] || "NOKEY"
     }
   }
 };
@@ -49,17 +51,23 @@ const createTarget = options => {
   return options.url + (query.length ? "?" + query.join("&") : "");
 }
 
+app.use(sentry.Handlers.requestHandler());
+
 app.use("/cid/:cid", (req, res) => {
   let cid = req.params.cid && req.params.cid.trim();
   if (!cid) {
-    log.error("server", {msg: "no campaign identifier found"});
+    let msg = "no campaign identifier found";
+    log.error("server", { msg });
+    res.status(500).send({ "status": "error", "details": { msg } });
     return;
   }
 
   cid = cid.toLowerCase();
   let campaign = CONFIG[cid];
   if (!campaign) {
-    log.error("server", {msg: "invalid campaign identifier: " + cid});
+    let msg = "invalid campaign identifier: " + cid;
+    log.error("server", { msg });
+    res.status(500).send({ "status": "error", "details": { msg } });
     return;
   }
 
@@ -93,6 +101,8 @@ app.get("/__version__", (req, res) => {
     }
   });
 });
+
+app.use(sentry.Handlers.errorHandler());
 
 // listen on the PORT env. variable
 if (process.env.PORT) {
