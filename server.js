@@ -56,19 +56,13 @@ app.use(sentry.Handlers.requestHandler());
 app.use("/cid/:cid", (req, res) => {
   let cid = req.params.cid && req.params.cid.trim();
   if (!cid) {
-    let msg = "no campaign identifier found";
-    log.error("server", { msg });
-    res.status(500).send({ "status": "error", "details": { msg } });
-    return;
+    throw "no campaign identifier found";
   }
 
   cid = cid.toLowerCase();
   let campaign = CONFIG[cid];
   if (!campaign) {
-    let msg = "invalid campaign identifier: " + cid;
-    log.error("server", { msg });
-    res.status(500).send({ "status": "error", "details": { msg } });
-    return;
+    throw "invalid campaign identifier: " + cid;
   }
 
   proxy.web(req, res, { target: createTarget(campaign) });
@@ -103,6 +97,17 @@ app.get("/__version__", (req, res) => {
 });
 
 app.use(sentry.Handlers.errorHandler());
+app.use(function onError(err, req, res) {
+  let msg = err + "";
+  log.error("server", { msg });
+  res.status(500).send({
+    status: "error",
+    "details": {
+      msg,
+      sentry: res.sentry
+    }
+  });
+})
 
 // listen on the PORT env. variable
 if (process.env.PORT) {
