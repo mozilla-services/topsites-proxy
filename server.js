@@ -97,7 +97,7 @@ app.get("/__version__", (req, res) => {
 });
 
 app.use(sentry.Handlers.errorHandler());
-app.use(function onError(err, req, res) {
+app.use(function errorHandler(err, req, res, next) {
   let msg = err + "";
   log.error("server", { msg });
   res.status(500).send({
@@ -107,7 +107,7 @@ app.use(function onError(err, req, res) {
       sentry: res.sentry
     }
   });
-})
+});
 
 // listen on the PORT env. variable
 if (process.env.PORT) {
