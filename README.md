@@ -1,4 +1,4 @@
-[![Docker Build Status](https://circleci.com/gh/mozilla-services/Dockerflow/tree/master.svg?style=shield&circle-token=c7c606e039cdccd2380782672ac12b2e85550295)](https://circleci.com/gh/mozilla-services/Dockerflow)
+[![Docker Build Status](https://circleci.com/gh/mozilla-services/topsites-proxy/tree/master.svg?style=shield&circle-token=e7ebd9840084fe030514be02a23db6a78973379d)](https://circleci.com/gh/mozilla-services/topsites-proxy)
 
 
 # Top Sites proxy
