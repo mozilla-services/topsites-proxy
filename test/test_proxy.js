@@ -6,6 +6,8 @@ describe("Top Sites proxy endpoint", function() {
   it("should handle proper requests to /cid/:cid properly", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
+      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+
       let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, resolve));
       Assert.equal(res.statusCode, 200);
 
@@ -17,6 +19,7 @@ describe("Top Sites proxy endpoint", function() {
           resolve(rawData);
         });
       });
+      await logsPromise;
 
       Assert.ok(data);
       Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=&h2=/`);
@@ -26,6 +29,8 @@ describe("Top Sites proxy endpoint", function() {
   it("should handle proper requests to /cid/:cid properly WITH headers", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
+      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+
       let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
         headers: {
           "X-Region": "us",
@@ -42,6 +47,7 @@ describe("Top Sites proxy endpoint", function() {
           resolve(rawData);
         });
       });
+      await logsPromise;
 
       Assert.ok(data);
       Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=us&h2=newtab/`);

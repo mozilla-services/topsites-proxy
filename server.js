@@ -12,14 +12,21 @@ const verfile = __dirname + "/version.json";
 
 const app = express();
 const proxy = httpProxy.createProxyServer({});
-sentry.init({ dsn: "https://b311ce518703482ba73a2fd5d59cf95f@sentry.prod.mozaws.net/529" })
+const dsn = process.env["SENTRY_DSN"] || "";
+if (dsn) {
+  sentry.init({ dsn });
+}
 
+const SPECIAL_DELIM = "%";
+const SPECIAL_SEP = ":";
 const CONFIG = {
   amzn_2020_1: {
     url: `http://localhost:${process.env.PORT}/test`,
     query: {
       key: process.env["AMZN_2020_1_KEY"] || "test",
-      cuid: "amzn_2020_1"
+      cuid: "amzn_2020_1",
+      h1: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
+      h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
     }
   },
   amzn_2020_s1: {
@@ -31,21 +38,28 @@ const CONFIG = {
     }
   },
   amzn_2020_a1: {
-    url: "http://api.admarketplace.com/api/link",
+    url: "https://mozilla.ampxdirect.com/",
     query: {
-      out: "https://www.amazon.com",
-      key: process.env["AMZN_2020_A1_KEY"] || "NOKEY"
+      partner: process.env["AMZN_2020_A1_KEY"] || "NOKEY",
+      sub1: "amazon",
+      sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
+      sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
     }
   }
 };
 
-const createTarget = options => {
-  let target = options.url;
+const createTarget = (req, options) => {
   let query = [];
-
   if (options.query) {
     for (let paramName of Object.getOwnPropertyNames(options.query)) {
-      query.push(paramName + "=" + options.query[paramName]);
+      let paramValue = options.query[paramName];
+      let parts = paramValue.toLowerCase().split(new RegExp(`[${SPECIAL_DELIM + SPECIAL_SEP}]+`));
+      if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
+        if (parts[0] == "header") {
+          paramValue = req.headers[parts[1]] || "";
+        }
+      }
+      query.push(paramName + "=" + paramValue);
     }
   }
   return options.url + (query.length ? "?" + query.join("&") : "");
@@ -65,7 +79,9 @@ app.use("/cid/:cid", (req, res) => {
     throw "invalid campaign identifier: " + cid;
   }
 
-  proxy.web(req, res, { target: createTarget(campaign) });
+  let target = createTarget(req, campaign);
+  log.info("server", { msg: `proxying ${cid} to ${target}` });
+  proxy.web(req, res, { target });
 });
 
 app.get("/test", (req, res) => {

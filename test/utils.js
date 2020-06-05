@@ -12,7 +12,7 @@ const defaultEnv = {
 async function withServer(callback, env = defaultEnv) {
   let cwd = path.normalize(path.join(__dirname, ".."));
   Object.assign(env, process.env);
-  server = spawn("node", [path.join(cwd, "server.js")], { cwd, env });
+  let server = spawn("node", [path.join(cwd, "server.js")], { cwd, env });
   server.stderr.pipe(process.stderr);
 
   await new Promise(resolve => {
@@ -54,14 +54,15 @@ async function checkServerLogs(server, messages, controller = { stop: null }) {
 
   let breakTimer = setTimeout(() => {
     controller.stop = STOP;
-  }, 20000);
+  }, 2000);
 
   while (true) {
     if (controller.stop && controller.stop === STOP) {
+      Assert.equal(matches.length, messages.length, "All expected messages should have passed through.");
       break;
     }
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 1));
   }
 
   server.stdout.removeListener("data", dataHandler);

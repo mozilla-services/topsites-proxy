@@ -20,9 +20,11 @@
     "http-proxy": "^1.18.1",
     "mozlog": "2.1.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "mocha": "^7.2.0"
+  },
   "scripts": {
     "start": "node server.js",
-    "test": "cat version.json; true"
+    "test": "./node_modules/mocha/bin/mocha test/test_*.js"
   }
 }
