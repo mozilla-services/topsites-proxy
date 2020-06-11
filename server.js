@@ -1,19 +1,94 @@
-const fs = require('fs');
-const express = require('express')
+const fs = require("fs");
+const express = require("express");
+const httpProxy = require("http-proxy");
+const sentry = require("@sentry/node");
 
-const mozlog = require('mozlog')({
-  app: "dockerflow-demo"
+const mozlog = require("mozlog")({
+  app: "topsites-proxy"
 });
 const log = mozlog("general");
 
 const verfile = __dirname + "/version.json";
 
 const app = express();
+const proxy = httpProxy.createProxyServer({});
+const dsn = process.env["SENTRY_DSN"] || "";
+if (dsn) {
+  sentry.init({ dsn });
+}
 
-app.get('/', (req, res) => res.send('Hello from dockerflow example app!'));
+const SPECIAL_DELIM = "%";
+const SPECIAL_SEP = ":";
+const CONFIG = {
+  amzn_2020_1: {
+    url: `http://localhost:${process.env.PORT}/test`,
+    query: {
+      key: process.env["AMZN_2020_1_KEY"] || "test",
+      cuid: "amzn_2020_1",
+      h1: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
+      h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
+    }
+  },
+  amzn_2020_s1: {
+    url: "http://api.viglink.com/api/link",
+    query: {
+      out: "https://www.amazon.com",
+      key: process.env["AMZN_2020_S1_KEY"] || "NOKEY",
+      format: "json"
+    }
+  },
+  amzn_2020_a1: {
+    url: "https://mozilla.ampxdirect.com/",
+    query: {
+      partner: process.env["AMZN_2020_A1_KEY"] || "NOKEY",
+      sub1: "amazon",
+      sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
+      sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
+    }
+  }
+};
 
-// for service monitoring to make sure the
-// service is responding and normal
+const createTarget = (req, options) => {
+  let query = [];
+  if (options.query) {
+    for (let paramName of Object.getOwnPropertyNames(options.query)) {
+      let paramValue = options.query[paramName];
+      let parts = paramValue.toLowerCase().split(new RegExp(`[${SPECIAL_DELIM + SPECIAL_SEP}]+`));
+      if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
+        if (parts[0] == "header") {
+          paramValue = req.headers[parts[1]] || "";
+        }
+      }
+      query.push(paramName + "=" + paramValue);
+    }
+  }
+  return options.url + (query.length ? "?" + query.join("&") : "");
+}
+
+app.use(sentry.Handlers.requestHandler());
+
+app.use("/cid/:cid", (req, res) => {
+  let cid = req.params.cid && req.params.cid.trim();
+  if (!cid) {
+    throw "no campaign identifier found";
+  }
+
+  cid = cid.toLowerCase();
+  let campaign = CONFIG[cid];
+  if (!campaign) {
+    throw "invalid campaign identifier: " + cid;
+  }
+
+  let target = createTarget(req, campaign);
+  log.info("server", { msg: `proxying ${cid} to ${target}` });
+  proxy.web(req, res, { target });
+});
+
+app.get("/test", (req, res) => {
+  res.status(200).send("TEST: " + req.url);
+});
+
+// For service monitoring to make sure the service is responding and normal.
 app.get("/__heartbeat__", (req, res) => {
   fs.stat(verfile, (err) => {
     if (err) {
@@ -24,8 +99,7 @@ app.get("/__heartbeat__", (req, res) => {
   });
 });
 
-// for load balancers to make sure the app is
-// running
+// for load balancers to make sure the app is running.
 app.get("/__lbheartbeat__", (req, res) => res.send("OK"));
 
 app.get("/__version__", (req, res) => {
@@ -38,9 +112,42 @@ app.get("/__version__", (req, res) => {
   });
 });
 
+app.use(sentry.Handlers.errorHandler());
+app.use(function errorHandler(err, req, res, next) {
+  let msg = err + "";
+  log.error("server", { msg });
+  res.status(500).send({
+    status: "error",
+    "details": {
+      msg,
+      sentry: res.sentry
+    }
+  });
+});
+
 // listen on the PORT env. variable
 if (process.env.PORT) {
-  app.listen(process.env.PORT, () => log.info("server", {msg: "listening", port: process.env.PORT}));
+  app.listen(process.env.PORT, () => {
+    log.info("server", {msg: "listening", port: process.env.PORT});
+
+    let cid = process.env.TEST;
+    if (cid) {
+      // If no valid campaign identifier was passed in, e.g. 'TEST=yes', then
+      // we'll take the last defined cid from the CONFIG above.
+      if (!CONFIG[cid]) {
+        cid = Object.getOwnPropertyNames(CONFIG).shift();
+      }
+      require("http").request({
+        host: "localhost",
+        port: process.env.PORT,
+        path: "/cid/" + cid
+      }, res => {
+        res.setEncoding("utf-8");
+        res.on("data", str => log.info("server", {msg: str}));
+        res.on("end", () => log.info("server", {msg: "test terminated."}));
+      }).end();
+    }
+  });
 } else {
   log.error("server", {msg: "no PORT env var"});
 }

@@ -9,7 +9,7 @@ jobs:
   build:
     docker:
       - image: docker:stable-git
-    working_directory: /dockerflow
+    working_directory: /topsites-proxy
     steps:
       - checkout
       - setup_remote_docker

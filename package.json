@@ -1,26 +1,30 @@
 {
   "author": "Mozilla (https://mozilla.org/)",
   "license": "MPL-2.0",
-  "name": "Dockerflow",
-  "description": "A demonstration of Cloud Services Dockerflow",
+  "name": "topsites-proxy",
+  "description": "Proxy server to track Top Sites default tile campaign attribution",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mozilla-services/dockerflow"
+    "url": "https://github.com/mozilla-services/topsites-proxy"
   },
-  "homepage": "https://github.com/mozilla-services/dockerflow",
-  "bugs": "https://github.com/mozilla-services/dockerflow/issues",
+  "homepage": "https://github.com/mozilla-services/topsites-proxy",
+  "bugs": "https://github.com/mozilla-services/topsites-proxy/issues",
   "main": "server.js",
   "engines": {
     "node": ">=12.13.0"
   },
   "dependencies": {
+    "@sentry/node": "^5.15.5",
     "express": "4.17.1",
+    "http-proxy": "^1.18.1",
     "mozlog": "2.1.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "mocha": "^7.2.0"
+  },
   "scripts": {
     "start": "node server.js",
-    "test": "cat version.json; true"
+    "test": "./node_modules/mocha/bin/mocha test/test_*.js"
   }
 }
