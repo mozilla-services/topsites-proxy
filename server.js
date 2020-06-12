@@ -11,7 +11,9 @@ const log = mozlog("general");
 const verfile = __dirname + "/version.json";
 
 const app = express();
-const proxy = httpProxy.createProxyServer({});
+const proxy = httpProxy.createProxyServer({
+  changeOrigin: true
+});
 const dsn = process.env["SENTRY_DSN"] || "";
 if (dsn) {
   sentry.init({ dsn });
