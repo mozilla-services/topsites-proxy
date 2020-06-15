@@ -41,7 +41,7 @@ const CONFIG = {
     }
   },
   amzn_2020_a1: {
-    url: "https://mozilla.ampxdirect.com/",
+    url: "https://mozilla.ampxdirect.com/amazon",
     query: {
       partner: process.env["AMZN_2020_A1_KEY"] || "NOKEY",
       sub1: "amazon",
