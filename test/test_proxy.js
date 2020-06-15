@@ -22,7 +22,7 @@ describe("Top Sites proxy endpoint", function() {
       await logsPromise;
 
       Assert.ok(data);
-      Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=&h2=/`);
+      Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=&h2=`);
     });
   });
 
@@ -50,7 +50,7 @@ describe("Top Sites proxy endpoint", function() {
       await logsPromise;
 
       Assert.ok(data);
-      Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=us&h2=newtab/`);
+      Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=us&h2=newtab`);
     });
   });
 });
