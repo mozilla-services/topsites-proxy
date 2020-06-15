@@ -12,7 +12,8 @@ const verfile = __dirname + "/version.json";
 
 const app = express();
 const proxy = httpProxy.createProxyServer({
-  changeOrigin: true
+  changeOrigin: true,
+  ignorePath: true
 });
 const dsn = process.env["SENTRY_DSN"] || "";
 if (dsn) {
@@ -58,7 +59,7 @@ const createTarget = (req, options) => {
       let parts = paramValue.toLowerCase().split(new RegExp(`[${SPECIAL_DELIM + SPECIAL_SEP}]+`));
       if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
         if (parts[0] == "header") {
-          paramValue = req.headers[parts[1]] || "";
+          paramValue = (req.headers[parts[1]] || "").toLowerCase();
         }
       }
       query.push(paramName + "=" + paramValue);
