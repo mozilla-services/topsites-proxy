@@ -59,6 +59,11 @@ const createTarget = (req, options) => {
       if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
         if (parts[0] == "header") {
           paramValue = (req.headers[parts[1]] || "").toLowerCase();
+          // Translate 'GB' to 'UK'. I know, but let's just not fret the details
+          // right now.
+          if (paramValue == "gb") {
+            paramValue = "uk";
+          }
         }
       }
       query.push(paramName + "=" + paramValue);
