@@ -22,6 +22,7 @@ if (dsn) {
 
 const SPECIAL_DELIM = "%";
 const SPECIAL_SEP = ":";
+const SPECIAL_ARG_REGEXP = new RegExp(`[${SPECIAL_DELIM + SPECIAL_SEP}]+`);
 const CONFIG = {
   amzn_2020_1: {
     url: `http://localhost:${process.env.PORT}/test`,
@@ -45,7 +46,8 @@ const CONFIG = {
     query: {
       sub1: "amazon",
       sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
-      sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
+      sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
+      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
     }
   }
 };
@@ -55,14 +57,20 @@ const createTarget = (req, options) => {
   if (options.query) {
     for (let paramName of Object.getOwnPropertyNames(options.query)) {
       let paramValue = options.query[paramName];
-      let parts = paramValue.toLowerCase().split(new RegExp(`[${SPECIAL_DELIM + SPECIAL_SEP}]+`));
+      let parts = paramValue.toLowerCase().split(SPECIAL_ARG_REGEXP);
       if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
         if (parts[0] == "header") {
-          paramValue = (req.headers[parts[1]] || "").toLowerCase();
-          // Translate 'GB' to 'UK'. I know, but let's just not fret the details
-          // right now.
-          if (paramValue == "gb") {
-            paramValue = "uk";
+          let header = parts[1];
+          paramValue = (req.headers[header] || "");
+          if (header == "x-target-url") {
+            paramValue = encodeURIComponent(paramValue);
+          } else {
+            paramValue = paramValue.toLowerCase();
+            // Translate 'GB' to 'UK'. I know, but let's just not fret the details
+            // right now.
+            if (paramValue == "gb") {
+              paramValue = "uk";
+            }
           }
         }
       }
