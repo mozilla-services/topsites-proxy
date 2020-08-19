@@ -33,16 +33,8 @@ const CONFIG = {
       h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
     }
   },
-  amzn_2020_s1: {
-    url: "http://api.viglink.com/api/link",
-    query: {
-      out: "https://www.amazon.com",
-      key: process.env["AMZN_2020_S1_KEY"] || "NOKEY",
-      format: "json"
-    }
-  },
   amzn_2020_a1: {
-    url: "https://mozilla.ampxdirect.com/amazon",
+    url: process.env["AMZN_2020_A1_URL"],
     query: {
       sub1: "amazon",
       sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
@@ -92,6 +84,9 @@ app.use("/cid/:cid", (req, res) => {
   let campaign = CONFIG[cid];
   if (!campaign) {
     throw "invalid campaign identifier: " + cid;
+  }
+  if (!campaign.url) {
+    throw "invalid campaign, please check environment variables.";
   }
 
   let target = createTarget(req, campaign);
