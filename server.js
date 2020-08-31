@@ -12,8 +12,10 @@ const verfile = __dirname + "/version.json";
 
 const app = express();
 const proxy = httpProxy.createProxyServer({
+  autoRewrite: true,
   changeOrigin: true,
-  ignorePath: true
+  ignorePath: true,
+  xfwd: false, // This is the default, but set it explicitly anyways.
 });
 const dsn = process.env["SENTRY_DSN"] || "";
 if (dsn) {
