@@ -33,6 +33,15 @@ const CONFIG = {
       h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
     }
   },
+  inspect: {
+    url: "https://8d90580d9eed29ad24e62f5dfa7f87e5.m.pipedream.net",
+    query: {
+      sub1: "amazon",
+      sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
+      sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
+      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
+    }
+  },
   amzn_2020_a1: {
     url: process.env["AMZN_2020_A1_URL"],
     query: {
