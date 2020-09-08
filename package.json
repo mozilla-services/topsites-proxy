@@ -17,7 +17,6 @@
   "dependencies": {
     "@sentry/node": "^5.15.5",
     "express": "4.17.1",
-    "http-proxy": "^1.18.1",
     "mozlog": "3.0.1"
   },
   "devDependencies": {
