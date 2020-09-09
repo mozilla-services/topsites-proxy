@@ -8,7 +8,8 @@ WORKDIR /app
 
 # Install node requirements and clean up unneeded cache data
 COPY package.json package.json
-RUN npm install && \
+COPY package-lock.json package-lock.json
+RUN npm ci && \
     npm cache clear --force && \
     rm -rf ~app/.node-gyp
 
