@@ -6,7 +6,7 @@ describe("Top Sites proxy endpoint", function() {
   it("should handle proper requests to /cid/:cid properly", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
-      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+      const logsPromise = checkServerLogs(server, [`forwarding ${cid} to `]);
 
       let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, resolve));
       Assert.equal(res.statusCode, 200);
@@ -29,7 +29,7 @@ describe("Top Sites proxy endpoint", function() {
   it("should handle proper requests to /cid/:cid properly WITH headers", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
-      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+      const logsPromise = checkServerLogs(server, [`forwarding ${cid} to `]);
 
       let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
         headers: {
