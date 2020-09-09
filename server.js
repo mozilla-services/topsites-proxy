@@ -101,7 +101,7 @@ app.use("/cid/:cid", (req, res) => {
     target,
     headers: {
       // We omit the platform data from the user-agent string.
-      "user-agent": req.headers["user-agent"].replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
+      "user-agent": (req.headers["user-agent"] || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
     }
   });
 });
