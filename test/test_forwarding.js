@@ -109,4 +109,35 @@ describe("Top Sites forward request endpoint", function() {
     });
   });
 
+  it("should handle proper requests to /cid/:cid normalizing user-agent header", async function() {
+    process.env["AMZN_2020_A1_URL"] = "https://httpbin.org/user-agent";
+    return withServer(async server => {
+      const cid = "amzn_2020_a1";
+      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+
+      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+        headers: {
+          "X-Region": "us",
+          "X-Source": "newtab",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        }
+      }, resolve));
+      Assert.equal(res.statusCode, 200);
+
+      let data = await new Promise(resolve => {
+        res.setEncoding("utf8");
+        let rawData = "";
+        res.on("data", chunk => rawData += chunk);
+        res.on("end", () => {
+          resolve(rawData);
+        });
+      });
+      await logsPromise;
+
+      // TODO: pass a subset of values to make it hard to track users
+      Assert.ok(data);
+      Assert.equal(JSON.parse(data)["user-agent"], "Mozilla/5.0 (X11; rv:82.0) Gecko/20100101 Firefox/82.0");
+    });
+  });
+
 });
