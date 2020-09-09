@@ -76,4 +76,33 @@ describe("Top Sites proxy endpoint", function() {
       Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=us&h2=newtab`);
     });
   });
+
+  it("should handle proper requests to /cid/:cid replacing gb with uk", async function() {
+    return withServer(async server => {
+      const cid = "amzn_2020_1";
+      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+
+      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+        headers: {
+          "X-Region": "gb",
+          "X-Source": "newtab"
+        }
+      }, resolve));
+      Assert.equal(res.statusCode, 200);
+
+      let data = await new Promise(resolve => {
+        res.setEncoding("utf8");
+        let rawData = "";
+        res.on("data", chunk => rawData += chunk);
+        res.on("end", () => {
+          resolve(rawData);
+        });
+      });
+      await logsPromise;
+
+      Assert.ok(data);
+      Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=uk&h2=newtab`);
+    });
+  });
+
 });
