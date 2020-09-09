@@ -140,4 +140,35 @@ describe("Top Sites forward request endpoint", function() {
     });
   });
 
+  it("should handle proper requests to /cid/:cid stripping cookies", async function() {
+    process.env["AMZN_2020_A1_URL"] = "https://httpbin.org/cookies";
+    return withServer(async server => {
+      const cid = "amzn_2020_a1";
+      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
+
+      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+        headers: {
+          "X-Region": "us",
+          "X-Source": "newtab",
+          "Cookie": ["type=ninja", "language=javascript"]
+        }
+      }, resolve));
+      Assert.equal(res.statusCode, 200);
+
+      let data = await new Promise(resolve => {
+        res.setEncoding("utf8");
+        let rawData = "";
+        res.on("data", chunk => rawData += chunk);
+        res.on("end", () => {
+          resolve(rawData);
+        });
+      });
+      await logsPromise;
+
+      // TODO: don't pass cookies to proxy
+      Assert.ok(data);
+      Assert.equal(JSON.parse(data).cookies, {});
+    });
+  });
+
 });
