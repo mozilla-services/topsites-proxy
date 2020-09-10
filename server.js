@@ -1,6 +1,6 @@
 const fs = require("fs");
+const forwardRequest = require("./lib/forward-request");
 const express = require("express");
-const httpProxy = require("http-proxy");
 const sentry = require("@sentry/node");
 
 const mozlog = require("mozlog")({
@@ -11,10 +11,6 @@ const log = mozlog("general");
 const verfile = __dirname + "/version.json";
 
 const app = express();
-const proxy = httpProxy.createProxyServer({
-  changeOrigin: true,
-  ignorePath: true
-});
 const dsn = process.env["SENTRY_DSN"] || "";
 if (dsn) {
   sentry.init({ dsn });
@@ -99,8 +95,9 @@ app.use("/cid/:cid", (req, res) => {
   }
 
   let target = createTarget(req, campaign);
-  log.info("server", { msg: `proxying ${cid} to ${target}` });
-  proxy.web(req, res, {
+  log.info("server", { msg: `forwarding ${cid} to ${target}` });
+
+  forwardRequest(req, res, {
     target,
     headers: {
       // We omit the platform data from the user-agent string.
@@ -110,7 +107,7 @@ app.use("/cid/:cid", (req, res) => {
 });
 
 app.get("/test", (req, res) => {
-  res.status(200).send("TEST: " + req.url);
+  res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
 });
 
 // For service monitoring to make sure the service is responding and normal.
