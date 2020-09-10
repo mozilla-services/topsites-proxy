@@ -140,7 +140,7 @@ describe("Top Sites forward request endpoint", function() {
     });
   });
 
-  it.skip("should handle proper requests to /cid/:cid stripping cookies", async function() {
+  it("should handle proper requests to /cid/:cid stripping cookies", async function() {
     process.env["AMZN_2020_A1_URL"] = "https://httpbin.org/cookies";
     return withServer(async server => {
       const cid = "amzn_2020_a1";
