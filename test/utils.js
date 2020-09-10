@@ -5,26 +5,35 @@ const { spawn } = require("child_process");
 const PORT = 8000;
 const defaultEnv = {
   AMZN_2020_1_KEY: "xxx",
-  TEST: "AMZN_2020_1_KEY",
   PORT
 };
 
-async function withServer(callback, env = defaultEnv) {
+async function withServer(callback, env = defaultEnv, logData = false) {
   let cwd = path.normalize(path.join(__dirname, ".."));
   Object.assign(env, process.env);
   let server = spawn("node", [path.join(cwd, "server.js")], { cwd, env });
   server.stderr.pipe(process.stderr);
 
+  function dumpIt(data) {
+    if (!logData) {
+      return;
+    }
+    console.log(data);
+  }
+
   await new Promise(resolve => {
     server.stdout.setEncoding("utf-8");
     // Mocha's built-in timeout handling will take of this taking too long.
     server.stdout.on("data", function onData(data) {
+      dumpIt(data);
       if (data.indexOf("listening") > -1) {
         server.stdout.removeListener("data", onData);
         resolve();
       }
     });
   });
+
+  server.stdout.on("data", dumpIt);
 
   server.on("close", code => {
     Assert.ok(!code, "process should've exited normally");
@@ -33,6 +42,7 @@ async function withServer(callback, env = defaultEnv) {
   await callback(server);
 
   server.kill();
+  server.stdout.removeListener("data", dumpIt);
 }
 
 const STOP = {};
