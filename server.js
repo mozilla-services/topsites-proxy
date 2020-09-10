@@ -107,7 +107,7 @@ app.use("/cid/:cid", (req, res) => {
 });
 
 app.get("/test", (req, res) => {
-  res.status(200).send("TEST: " + req.url);
+  res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
 });
 
 // For service monitoring to make sure the service is responding and normal.
