@@ -21,9 +21,11 @@
     "mozlog": "3.0.1"
   },
   "devDependencies": {
-    "mocha": "8.1.0"
+    "mocha": "8.1.0",
+    "nyc": "^15.1.0"
   },
   "scripts": {
+    "coverage": "nyc --reporter=text --reporter=html mocha",
     "start": "node server.js",
     "test": "./node_modules/mocha/bin/mocha test/test_*.js"
   }
