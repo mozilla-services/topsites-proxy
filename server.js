@@ -77,6 +77,11 @@ const createTarget = (req, options) => {
   return options.url + (query.length ? "?" + query.join("&") : "");
 }
 
+const pruneUserAgent = ua => {
+  return (ua || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
+    .replace(/windows[^;]+;/i, "Windows;")
+};
+
 app.use(sentry.Handlers.requestHandler());
 
 app.use("/cid/:cid", (req, res) => {
@@ -101,7 +106,7 @@ app.use("/cid/:cid", (req, res) => {
     target,
     headers: {
       // We omit the platform data from the user-agent string.
-      "user-agent": (req.headers["user-agent"] || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
+      "user-agent": pruneUserAgent(req.headers["user-agent"])
     }
   });
 });
