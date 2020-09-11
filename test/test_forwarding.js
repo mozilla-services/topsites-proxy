@@ -1,26 +1,16 @@
 const Assert = require("assert");
-const http = require("http");
-const { withServer, checkServerLogs, PORT, STOP } = require("./utils");
+const { withServer, sendForwardRequest, PORT, STOP } = require("./utils");
 
 describe("Top Sites forward request endpoint", function() {
 
   it("should return 500 for request to /cid/:cid with an invalid cid", async function() {
     return withServer(async server => {
       const cid = "not_found";
-      const logsPromise = checkServerLogs(server, [`invalid campaign identifier: ${cid}`]);
-
-      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, resolve));
-      Assert.equal(res.statusCode, 500);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
+      const data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        expectedStatusCode: 500,
+        waitForServerLogMessage: `invalid campaign identifier: ${cid}`
       });
-      await logsPromise;
 
       Assert.ok(data);
     });
@@ -56,20 +46,10 @@ describe("Top Sites forward request endpoint", function() {
   it("should handle proper requests to /cid/:cid properly", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
-      const logsPromise = checkServerLogs(server, [`forwarding ${cid} to `]);
-
-      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, resolve));
-      Assert.equal(res.statusCode, 200);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
+      const data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        waitForServerLogMessage: `forwarding ${cid} to `
       });
-      await logsPromise;
 
       Assert.ok(data);
       Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=&h2=`);
@@ -79,26 +59,15 @@ describe("Top Sites forward request endpoint", function() {
   it("should handle proper requests to /cid/:cid properly WITH headers", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
-      const logsPromise = checkServerLogs(server, [`forwarding ${cid} to `]);
-
-      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+      const data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:80.0) Gecko/20100101 Firefox/80.0",
           "X-Region": "us",
           "X-Source": "newtab"
-        }
-      }, resolve));
-      Assert.equal(res.statusCode, 200);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `
       });
-      await logsPromise;
 
       let [query, userAgent, statusCode] = data.split("\n");
       Assert.ok(query);
@@ -111,25 +80,14 @@ describe("Top Sites forward request endpoint", function() {
   it("should handle proper requests to /cid/:cid replacing gb with uk", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
-      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
-
-      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+      let data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "X-Region": "gb",
           "X-Source": "newtab"
-        }
-      }, resolve));
-      Assert.equal(res.statusCode, 200);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `
       });
-      await logsPromise;
 
       Assert.ok(data);
       Assert.equal(data.trim(), `TEST: /test?key=xxx&cuid=${cid}&h1=uk&h2=newtab`);
@@ -139,31 +97,48 @@ describe("Top Sites forward request endpoint", function() {
   it("should handle proper requests to /cid/:cid normalizing user-agent header", async function() {
     process.env["AMZN_2020_A1_URL"] = "https://httpbin.org/user-agent";
     return withServer(async server => {
-      const cid = "amzn_2020_a1";
-      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
-
-      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+      const cid = "amzn_2020_1";
+      let data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "X-Region": "us",
           "X-Source": "newtab",
           "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0",
-        }
-      }, resolve));
-      Assert.equal(res.statusCode, 200);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `
       });
-      await logsPromise;
 
-      // TODO: pass a subset of values to make it hard to track users
-      Assert.ok(data);
-      Assert.equal(JSON.parse(data)["user-agent"], "Mozilla/5.0 (X11; rv:82.0) Gecko/20100101 Firefox/82.0");
+      let [query, userAgent] = data.split("\n");
+      Assert.ok(query);
+      Assert.equal(userAgent.trim(), "Mozilla/5.0 (X11; rv:82.0) Gecko/20100101 Firefox/82.0");
+
+      data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        headers: {
+          "X-Region": "us",
+          "X-Source": "newtab",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0",
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `
+      });
+
+      [query, userAgent] = data.split("\n");
+      Assert.ok(query);
+      Assert.equal(userAgent.trim(), "Mozilla/5.0 (Windows; rv:80.0) Gecko/20100101 Firefox/80.0");
+
+      data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        headers: {
+          "X-Region": "us",
+          "X-Source": "newtab",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:80.0) Gecko/20100101 Firefox/80.0",
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `
+      });
+
+      [query, userAgent] = data.split("\n");
+      Assert.ok(query);
+      Assert.equal(userAgent.trim(), "Mozilla/5.0 (Macintosh; rv:80.0) Gecko/20100101 Firefox/80.0");
     });
   });
 
@@ -171,28 +146,16 @@ describe("Top Sites forward request endpoint", function() {
     process.env["AMZN_2020_A1_URL"] = "https://httpbin.org/cookies";
     return withServer(async server => {
       const cid = "amzn_2020_a1";
-      const logsPromise = checkServerLogs(server, [`proxying ${cid} to `]);
-
-      let res = await new Promise(resolve => http.get(`http://localhost:${PORT}/cid/${cid}`, {
+      const data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "X-Region": "us",
           "X-Source": "newtab",
           "Cookie": ["type=ninja", "language=javascript"]
-        }
-      }, resolve));
-      Assert.equal(res.statusCode, 200);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `
       });
-      await logsPromise;
 
-      // TODO: don't pass cookies to proxy
       Assert.ok(data);
       Assert.deepEqual(JSON.parse(data).cookies, {});
     });

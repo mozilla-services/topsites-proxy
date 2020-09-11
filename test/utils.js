@@ -1,4 +1,5 @@
 const Assert = require("assert");
+const http = require("http");
 const path = require("path");
 const { spawn } = require("child_process");
 
@@ -81,4 +82,23 @@ async function checkServerLogs(server, messages, controller = { stop: null }) {
   return matches;
 }
 
-module.exports = { withServer, checkServerLogs, PORT, STOP };
+async function sendForwardRequest(server, { url, headers = {}, expectedStatusCode = 200, waitForServerLogMessage }) {
+  const logsPromise = checkServerLogs(server, [waitForServerLogMessage]);
+
+  let res = await new Promise(resolve => http.get(url, { headers }, resolve));
+  Assert.equal(res.statusCode, expectedStatusCode);
+
+  const data = await new Promise(resolve => {
+    res.setEncoding("utf8");
+    let rawData = "";
+    res.on("data", chunk => rawData += chunk);
+    res.on("end", () => {
+      resolve(rawData);
+    });
+  });
+
+  await logsPromise;
+  return data;
+}
+
+module.exports = { withServer, checkServerLogs, sendForwardRequest , PORT, STOP };
