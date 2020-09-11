@@ -77,6 +77,11 @@ const createTarget = (req, options) => {
   return options.url + (query.length ? "?" + query.join("&") : "");
 }
 
+const pruneUserAgent = ua => {
+  return (ua || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
+    .replace(/windows[^;]+;/i, "Windows;")
+};
+
 app.use(sentry.Handlers.requestHandler());
 
 app.use("/cid/:cid", (req, res) => {
@@ -104,14 +109,16 @@ app.use("/cid/:cid", (req, res) => {
     target,
     headers: {
       // We omit the platform data from the user-agent string.
-      "user-agent": (req.headers["user-agent"] || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
+      "user-agent": pruneUserAgent(req.headers["user-agent"])
     }
   });
 });
 
-app.get("/test", (req, res) => {
-  res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
-});
+if ((process.env.NODE_ENV || "").startsWith("dev")) {
+  app.get("/test", (req, res) => {
+    res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
+  });
+}
 
 // For service monitoring to make sure the service is responding and normal.
 app.get("/__heartbeat__", (req, res) => {
