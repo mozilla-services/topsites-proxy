@@ -106,7 +106,7 @@ app.use("/cid/:cid", (req, res) => {
   });
 });
 
-if (process.env.TESTMODE) {
+if ((process.env.NODE_ENV || "").startsWith("dev")) {
   app.get("/test", (req, res) => {
     res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
   });
