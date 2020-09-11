@@ -16,6 +16,21 @@ describe("Top Sites forward request endpoint", function() {
     });
   });
 
+  it("should return 500 for request to /cid/:cid with an invalid method", async function() {
+    return withServer(async server => {
+      const cid = "amzn_2020_1";
+      const method = "POST";
+      const data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        method,
+        expectedStatusCode: 500,
+        waitForServerLogMessage: `invalid request method: ${method}`
+      });
+
+      Assert.ok(data);
+    });
+  });
+
   it("should handle proper requests to /cid/:cid properly", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
