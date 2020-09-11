@@ -83,10 +83,15 @@ async function checkServerLogs(server, messages, controller = { stop: null }) {
   return matches;
 }
 
-async function sendForwardRequest(server, { url, headers = {}, expectedStatusCode = 200, waitForServerLogMessage }) {
+async function sendForwardRequest(server, { url, method = "GET", headers = {}, expectedStatusCode = 200, waitForServerLogMessage }) {
   const logsPromise = checkServerLogs(server, [waitForServerLogMessage]);
 
-  let res = await new Promise(resolve => http.get(url, { headers }, resolve));
+  let res = await new Promise(resolve => {
+    const req = http.request(url, { method, headers }, resolve);
+    req.write("");
+    req.end();
+  });
+  // let res = await new Promise(resolve => http.get(url, { headers }, resolve));
   Assert.equal(res.statusCode, expectedStatusCode);
 
   const data = await new Promise(resolve => {

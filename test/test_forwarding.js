@@ -20,24 +20,12 @@ describe("Top Sites forward request endpoint", function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
       const method = "POST";
-      const logsPromise = checkServerLogs(server, [`invalid request method: ${method}`]);
-
-      let res = await new Promise(resolve => {
-        const req = http.request(`http://localhost:${PORT}/cid/${cid}`, { method }, resolve);
-        req.write("");
-        req.end();
+      const data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        method,
+        expectedStatusCode: 500,
+        waitForServerLogMessage: `invalid request method: ${method}`
       });
-      Assert.equal(res.statusCode, 500);
-
-      let data = await new Promise(resolve => {
-        res.setEncoding("utf8");
-        let rawData = "";
-        res.on("data", chunk => rawData += chunk);
-        res.on("end", () => {
-          resolve(rawData);
-        });
-      });
-      await logsPromise;
 
       Assert.ok(data);
     });
