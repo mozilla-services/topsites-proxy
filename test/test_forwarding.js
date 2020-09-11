@@ -26,6 +26,33 @@ describe("Top Sites forward request endpoint", function() {
     });
   });
 
+  it("should return 500 for request to /cid/:cid with an invalid method", async function() {
+    return withServer(async server => {
+      const cid = "amzn_2020_1";
+      const method = "POST";
+      const logsPromise = checkServerLogs(server, [`invalid request method: ${method}`]);
+
+      let res = await new Promise(resolve => {
+        const req = http.request(`http://localhost:${PORT}/cid/${cid}`, { method }, resolve);
+        req.write("");
+        req.end();
+      });
+      Assert.equal(res.statusCode, 500);
+
+      let data = await new Promise(resolve => {
+        res.setEncoding("utf8");
+        let rawData = "";
+        res.on("data", chunk => rawData += chunk);
+        res.on("end", () => {
+          resolve(rawData);
+        });
+      });
+      await logsPromise;
+
+      Assert.ok(data);
+    });
+  });
+
   it("should handle proper requests to /cid/:cid properly", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
