@@ -111,9 +111,11 @@ app.use("/cid/:cid", (req, res) => {
   });
 });
 
-app.get("/test", (req, res) => {
-  res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
-});
+if ((process.env.NODE_ENV || "").startsWith("dev")) {
+  app.get("/test", (req, res) => {
+    res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
+  });
+}
 
 // For service monitoring to make sure the service is responding and normal.
 app.get("/__heartbeat__", (req, res) => {
