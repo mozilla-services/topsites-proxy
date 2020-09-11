@@ -12,6 +12,7 @@ const defaultEnv = {
 async function withServer(callback, env = defaultEnv, logData = false) {
   let cwd = path.normalize(path.join(__dirname, ".."));
   Object.assign(env, process.env);
+  env.TESTMODE = "yes";
   let server = spawn("node", [path.join(cwd, "server.js")], { cwd, env });
   server.stderr.pipe(process.stderr);
 
