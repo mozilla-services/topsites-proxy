@@ -93,6 +93,9 @@ app.use("/cid/:cid", (req, res) => {
   if (!campaign.url) {
     throw "invalid campaign, please check environment variables.";
   }
+  if ((campaign.method || "GET") != req.method) {
+    throw "invalid request method: " + req.method;
+  }
 
   let target = createTarget(req, campaign);
   log.info("server", { msg: `forwarding ${cid} to ${target}` });
