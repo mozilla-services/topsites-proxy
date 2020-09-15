@@ -112,7 +112,7 @@ describe("Top Sites forward request endpoint", function() {
 
       [query, userAgent] = data.split("\n");
       Assert.ok(query);
-      Assert.equal(userAgent.trim(), "Mozilla/5.0 (Windows; rv:80.0) Gecko/20100101 Firefox/80.0");
+      Assert.equal(userAgent.trim(), "Mozilla/5.0 (Windows NT; rv:80.0) Gecko/20100101 Firefox/80.0");
 
       data = await sendForwardRequest(server, {
         url: `http://localhost:${PORT}/cid/${cid}`,
