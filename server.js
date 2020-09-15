@@ -79,7 +79,7 @@ const createTarget = (req, options) => {
 
 const pruneUserAgent = ua => {
   return (ua || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
-    .replace(/windows[^;]+;/i, "Windows;")
+    .replace(/windows[^;]+;/i, "Windows NT;")
 };
 
 app.use(sentry.Handlers.requestHandler());
