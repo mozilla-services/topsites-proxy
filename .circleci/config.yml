@@ -9,7 +9,10 @@ jobs:
   build:
     docker:
       - image: docker:stable-git
-    working_directory: /topsites-proxy
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+    working_directory: /dockerflow
     steps:
       - checkout
       - setup_remote_docker
@@ -24,6 +27,15 @@ jobs:
             "$CIRCLE_PROJECT_USERNAME" \
             "$CIRCLE_PROJECT_REPONAME" \
             "$CIRCLE_BUILD_URL" > version.json
+
+      - run:
+          name: Login to Dockerhub
+          command: |
+            if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
+              echo "Skipping Login to Dockerhub, credentials not available."
+            else
+              echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
+            fi
 
       - run:
           name: Build Docker image
@@ -42,6 +54,9 @@ jobs:
   test:
     docker:
       - image: docker:18.06.3-ce
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
     steps:
       - setup_remote_docker
       - restore_cache:
@@ -57,6 +72,9 @@ jobs:
   deploy:
     docker:
       - image: docker:18.06.3-ce
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
     steps:
       - setup_remote_docker
       - restore_cache:
