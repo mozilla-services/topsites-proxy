@@ -163,7 +163,6 @@ app.get("/__version__", (req, res) => {
 
 app.use(sentry.Handlers.errorHandler());
 app.use(function errorHandler(err, req, res, next) {
-  console.log(err);
   let msg = err + "";
   log.error("server", { msg });
   res.status(500).send({
