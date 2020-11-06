@@ -23,6 +23,7 @@ const CONFIG = {
   amzn_2020_1: {
     url: `http://localhost:${process.env.PORT}/test`,
     query: {
+      sub1: "amazon",
       key: process.env["AMZN_2020_1_KEY"] || "test",
       cuid: "amzn_2020_1",
       h1: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
@@ -52,6 +53,22 @@ const CONFIG = {
 const createTarget = (req, options) => {
   let query = [];
   if (options.query) {
+    // Clone clone the object for single use inside this method.
+    options = Object.assign({}, options);
+    options.query = Object.assign({}, options.query);
+
+    let XTargetURL = req.headers["x-target-url"];
+    // Support the eBay campaign.
+    if (XTargetURL && XTargetURL.startsWith("https://www.ebay.")) {
+      options.query.sub1 = "ebay";
+      // Partner requires a `ctag` param to be added, which is part of the
+      // target URL already.
+      let ctag = XTargetURL.match(/crlp=([^&]*)&/i);
+      if (ctag) {
+        options.query.ctag = ctag[1];
+      }
+    }
+
     for (let paramName of Object.getOwnPropertyNames(options.query)) {
       let paramValue = options.query[paramName];
       let parts = paramValue.toLowerCase().split(SPECIAL_ARG_REGEXP);
