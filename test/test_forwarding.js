@@ -57,7 +57,7 @@ describe("Top Sites forward request endpoint", function() {
         waitForServerLogMessage: `forwarding ${cid} to `
       });
 
-      let [query, userAgent, statusCode] = data.split("\n");
+      let [query, userAgent] = data.split("\n");
       Assert.ok(query);
       Assert.equal(query.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=us&h2=newtab`);
       // Header should be pruned of unnecessary PII data:
@@ -83,7 +83,6 @@ describe("Top Sites forward request endpoint", function() {
   });
 
   it("should handle proper requests to /cid/:cid normalizing user-agent header", async function() {
-    process.env["AMZN_2020_A1_URL"] = "https://httpbin.org/user-agent";
     return withServer(async server => {
       const cid = "amzn_2020_1";
       let data = await sendForwardRequest(server, {
