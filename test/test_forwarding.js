@@ -40,7 +40,7 @@ describe("Top Sites forward request endpoint", function() {
       });
 
       Assert.ok(data);
-      Assert.equal(data.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=&h2=`);
+      Assert.equal(data.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=&h2=&cu=`);
     });
   });
 
@@ -59,7 +59,7 @@ describe("Top Sites forward request endpoint", function() {
 
       let [query, userAgent] = data.split("\n");
       Assert.ok(query);
-      Assert.equal(query.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=us&h2=newtab`);
+      Assert.equal(query.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=us&h2=newtab&cu=`);
       // Header should be pruned of unnecessary PII data:
       Assert.equal(userAgent.trim(), "Mozilla/5.0 (Macintosh; rv:80.0) Gecko/20100101 Firefox/80.0");
     });
@@ -78,7 +78,7 @@ describe("Top Sites forward request endpoint", function() {
       });
 
       Assert.ok(data);
-      Assert.equal(data.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=uk&h2=newtab`);
+      Assert.equal(data.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=uk&h2=newtab&cu=`);
     });
   });
 
@@ -132,21 +132,22 @@ describe("Top Sites forward request endpoint", function() {
   it("should send to correct data for eBay campaigns", async function() {
     return withServer(async server => {
       const cid = "amzn_2020_1";
+      const targetURL = "https://www.ebay.co.uk?mkevt=1&mkcid=2&mkrid=" +
+        "710-158768-120484-6&keyword=conducive&crlp=123456789GB2020110611&" +
+        "MT_ID=562786&device=Computers&cmpgn=216901"
       let data = await sendForwardRequest(server, {
         url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "X-Region": "gb",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.ebay.co.uk?mkevt=1&mkcid=2&" +
-            "mkrid=123-123456-123456-1&keyword=foo&crlp=123456789GB2020110611" +
-            "&MT_ID=123456&device=bar&cmpgn=123456"
+          "X-Target-URL": targetURL
         },
         waitForServerLogMessage: `forwarding ${cid} to `
       });
 
       Assert.ok(data);
       Assert.equal(data.trim(), "TEST: /test?sub1=ebay&key=xxx&cuid=" +
-        cid + "&h1=uk&h2=newtab&ctag=123456789GB2020110611");
+        cid + "&h1=uk&h2=newtab&ctag=123456789GB2020110611&cu=" + encodeURIComponent(targetURL));
 
       // Sanity check that the configuration is not mutated and subsequent
       // requests still work.
@@ -156,7 +157,7 @@ describe("Top Sites forward request endpoint", function() {
       });
 
       Assert.ok(data);
-      Assert.equal(data.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=&h2=`);
+      Assert.equal(data.trim(), `TEST: /test?sub1=amazon&key=xxx&cuid=${cid}&h1=&h2=&cu=`);
     });
   });
 
