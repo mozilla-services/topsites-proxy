@@ -27,7 +27,8 @@ const CONFIG = {
       key: process.env["AMZN_2020_1_KEY"] || "test",
       cuid: "amzn_2020_1",
       h1: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
-      h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`
+      h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
+      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
     }
   },
   inspect: {
@@ -53,7 +54,7 @@ const CONFIG = {
 const createTarget = (req, options) => {
   let query = [];
   if (options.query) {
-    // Clone clone the object for single use inside this method.
+    // Clone the object for single use inside this method.
     options = Object.assign({}, options);
     options.query = Object.assign({}, options.query);
 
@@ -61,12 +62,6 @@ const createTarget = (req, options) => {
     // Support the eBay campaign.
     if (XTargetURL && XTargetURL.startsWith("https://www.ebay.")) {
       options.query.sub1 = "ebay";
-      // Partner requires a `ctag` param to be added, which is part of the
-      // target URL already.
-      let ctag = XTargetURL.match(/crlp=([^&]*)&/i);
-      if (ctag) {
-        options.query.ctag = ctag[1];
-      }
     }
 
     for (let paramName of Object.getOwnPropertyNames(options.query)) {
@@ -77,6 +72,19 @@ const createTarget = (req, options) => {
           let header = parts[1];
           paramValue = (req.headers[header] || "");
           if (header == "x-target-url") {
+            // Extract the `ctag` parameter from the target URL.
+            if (paramValue) {
+              let url;
+              try {
+                url = new URL(paramValue);
+              } catch (ex) {
+                log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + paramValue});
+              }
+              let tag = url.searchParams.get("ref") || url.searchParams.get("crlp");
+              if (tag) {
+                query.push("ctag=" + encodeURIComponent(tag.replace("pd_sl_a", "")));
+              }
+            }
             paramValue = encodeURIComponent(paramValue);
           } else {
             paramValue = paramValue.toLowerCase();
