@@ -116,11 +116,12 @@ const createTarget = (req, options) => {
 
     // TEMP WORKAROUND: if the region passed in the X-Region header doesn't
     // match up with the region that the public suffix indicates, throw an error.
+    // When https://bugzilla.mozilla.org/show_bug.cgi?id=1685729 is resolved and
+    // released, this code may be removed.
     let XRegion = req.headers["x-region"];
-    if (tld && XRegion && PUBLIC_SUFFIX_TO_REGION.has(tld)) {
-      if (PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion.toLowerCase()) {
-        throw new Error(ERR_REGION_MISMATCH);
-      }
+    if (tld && XRegion && PUBLIC_SUFFIX_TO_REGION.has(tld) &&
+      PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion.toLowerCase()) {
+      throw new Error(ERR_REGION_MISMATCH);
     }
 
     // Support the eBay campaign.
