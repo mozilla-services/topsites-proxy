@@ -108,16 +108,16 @@ const createTarget = (req, options) => {
   let url, tld;
   if (XTargetURL) {
     try {
-      url = new URL(paramValue);
-      {tld} = psl.parse(url.hostname);
+      url = new URL(XTargetURL);
+      tld = psl.parse(url.hostname).tld;
     } catch (ex) {
-      log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + paramValue});
+      log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + XTargetURL});
     }
 
     // TEMP WORKAROUND: if the region passed in the X-Region header doesn't
     // match up with the region that the public suffix indicates, throw an error.
     let XRegion = req.headers["x-region"];
-    if (PUBLIC_SUFFIX_TO_REGION.has(tld)) {
+    if (tld && PUBLIC_SUFFIX_TO_REGION.has(tld)) {
       if (PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion) {
         throw new Error(ERR_REGION_MISMATCH);
       }
