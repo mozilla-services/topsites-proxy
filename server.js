@@ -26,8 +26,11 @@ const CONFIG = {
       sub1: "amazon",
       key: process.env["AMZN_2020_1_KEY"] || "test",
       cuid: "amzn_2020_1",
+      // Reads the X-Region header.
       h1: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
+      // Reads the X-Source header.
       h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
+      // Reads the X-Target-URL header.
       cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
     }
   },
@@ -48,56 +51,98 @@ const CONFIG = {
       sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
       cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
     }
-  }
+  },
+  weather_conditions: {
+    url: process.env["WEATHER_CONDITIONS_URL"],
+    query: {
+      apikey: process.env["WEATHER_KEY"],
+    }
+  },
+  weather_location: {
+    url: process.env["WEATHER_LOCATION_URL"],
+    query: {
+      // Consumers should pass a `q` parameter in the URL.
+      apikey: process.env["WEATHER_KEY"],
+    }
+  },
 };
 
+/**
+ * Constructs the URL to be fetched via this proxy. First, we merge pre-defined
+ * query parameters from `options` (if any) with any query paramters passed in
+ * via the URL. Then we make partner-specific adjustments to the URL. Finally,
+ * we perform any required special handling on query parameters, such as
+ * encoding URIs.
+ *
+ * @param {Request} req
+ *   The request from the client.
+ * @param {object} options
+ *   The object in CONFIG above corresponding to the endpoint requested by the
+ *   client. For example, if the client called
+ *   https://<SERVER_URL>/cid/amzn_2020_a1, `options` should be the contents of
+ *   CONFIG.amzn_2020_a1.
+ */
 const createTarget = (req, options) => {
   let query = [];
-  if (options.query) {
-    // Clone the object for single use inside this method.
-    options = Object.assign({}, options);
-    options.query = Object.assign({}, options.query);
 
-    let XTargetURL = req.headers["x-target-url"];
-    // Support the eBay campaign.
-    if (XTargetURL && XTargetURL.startsWith("https://www.ebay.")) {
-      options.query.sub1 = "ebay";
+  // Clone the object for single use inside this method.
+  options = Object.assign({}, options);
+  options.query = Object.assign({}, options.query);
+  if (req.query) {
+    // Merge the query parameters passed to the proxy with those pre-defined in
+    // options.query.
+    Object.assign(options.query, req.query);
+  }
+
+  let XTargetURL = req.headers["x-target-url"];
+  // Support the eBay campaign.
+  if (XTargetURL && XTargetURL.startsWith("https://www.ebay.")) {
+    options.query.sub1 = "ebay";
+  }
+
+  if (options.url == process.env["WEATHER_CONDITIONS_URL"]) {
+    // The weather conditions API requires a dynamic key to be in the URL path
+    // rather than in the query paramters.
+    if (options.query.locationKey) {
+      options.url = `${options.url}${options.query.locationKey}.json`;
+    } else {
+      throw new Error("locationKey parameter must be provided.");
     }
+  }
 
-    for (let paramName of Object.getOwnPropertyNames(options.query)) {
-      let paramValue = options.query[paramName];
-      let parts = paramValue.toLowerCase().split(SPECIAL_ARG_REGEXP);
-      if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
-        if (parts[0] == "header") {
-          let header = parts[1];
-          paramValue = (req.headers[header] || "");
-          if (header == "x-target-url") {
-            // Extract the `ctag` parameter from the target URL.
-            if (paramValue) {
-              let url;
-              try {
-                url = new URL(paramValue);
-              } catch (ex) {
-                log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + paramValue});
-              }
-              let tag = url.searchParams.get("ref") || url.searchParams.get("crlp");
-              if (tag) {
-                query.push("ctag=" + encodeURIComponent(tag.replace("pd_sl_a", "")));
-              }
+  for (let paramName of Object.getOwnPropertyNames(options.query)) {
+    let paramValue = options.query[paramName];
+    let parts = paramValue.toLowerCase().split(SPECIAL_ARG_REGEXP);
+    if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
+      if (parts[0] == "header") {
+        let header = parts[1];
+        paramValue = (req.headers[header] || "");
+        if (header == "x-target-url") {
+          // Extract the `ctag` parameter from the target URL.
+          if (paramValue) {
+            let url;
+            try {
+              url = new URL(paramValue);
+            } catch (ex) {
+              log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + paramValue});
             }
-            paramValue = encodeURIComponent(paramValue);
-          } else {
-            paramValue = paramValue.toLowerCase();
-            // Translate 'GB' to 'UK'. I know, but let's just not fret the details
-            // right now.
-            if (paramValue == "gb") {
-              paramValue = "uk";
+            let tag = url.searchParams.get("ref") || url.searchParams.get("crlp");
+            if (tag) {
+              query.push("ctag=" + encodeURIComponent(tag.replace("pd_sl_a", "")));
             }
+          }
+          paramValue = encodeURIComponent(paramValue);
+        } else {
+          paramValue = paramValue.toLowerCase();
+          // Translate 'GB' to 'UK'. I know, but let's just not fret the details
+          // right now.
+          if (paramValue == "gb") {
+            paramValue = "uk";
           }
         }
       }
-      query.push(paramName + "=" + paramValue);
     }
+    query.push(paramName + "=" + paramValue);
   }
   return options.url + (query.length ? "?" + query.join("&") : "");
 }
