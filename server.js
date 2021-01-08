@@ -195,7 +195,6 @@ app.use("/cid/:cid", (req, res) => {
   }
 
   let target = createTarget(req, campaign);
-
   log.info("server", { msg: `forwarding ${cid} to ${target}` });
 
   forwardRequest(req, res, {
