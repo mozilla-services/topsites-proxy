@@ -146,8 +146,8 @@ describe("Top Sites forward request endpoint", function() {
       });
 
       Assert.ok(data);
-      Assert.equal(data.trim(), "TEST: /test?sub1=ebay&key=xxx&cuid=" +
-        cid + "&h1=uk&h2=newtab&ctag=123456789GB2020110611&cu=" + encodeURIComponent(targetURL));
+      Assert.equal(data.trim(), "TEST: /test?ctag=123456789GB2020110611&sub1=ebay&" +
+        "key=xxx&cuid=" + cid + "&h1=uk&h2=newtab&cu=" + encodeURIComponent(targetURL));
 
       // Sanity check that the configuration is not mutated and subsequent
       // requests still work.
