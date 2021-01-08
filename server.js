@@ -117,8 +117,8 @@ const createTarget = (req, options) => {
     // TEMP WORKAROUND: if the region passed in the X-Region header doesn't
     // match up with the region that the public suffix indicates, throw an error.
     let XRegion = req.headers["x-region"];
-    if (tld && PUBLIC_SUFFIX_TO_REGION.has(tld)) {
-      if (PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion) {
+    if (tld && XRegion && PUBLIC_SUFFIX_TO_REGION.has(tld)) {
+      if (PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion.toLowerCase()) {
         throw new Error(ERR_REGION_MISMATCH);
       }
     }
