@@ -1,6 +1,7 @@
+const express = require("express");
 const fs = require("fs");
 const forwardRequest = require("./lib/forward-request");
-const express = require("express");
+const psl = require("psl");
 const sentry = require("@sentry/node");
 
 const mozlog = require("mozlog")({
@@ -66,6 +67,15 @@ const CONFIG = {
     }
   },
 };
+const PUBLIC_SUFFIX_TO_REGION = new Map([
+  ["ca", "ca"],
+  ["co.uk", "gb"],
+  ["com.au", "au"],
+  ["com", "us"],
+  ["de", "de"],
+  ["fr", "fr"]
+]);
+const ERR_REGION_MISMATCH = "Public suffix region mismatch.";
 
 /**
  * Constructs the URL to be fetched via this proxy. First, we merge pre-defined
@@ -95,9 +105,34 @@ const createTarget = (req, options) => {
   }
 
   let XTargetURL = req.headers["x-target-url"];
-  // Support the eBay campaign.
-  if (XTargetURL && XTargetURL.startsWith("https://www.ebay.")) {
-    options.query.sub1 = "ebay";
+  let url, tld;
+  if (XTargetURL) {
+    try {
+      url = new URL(paramValue);
+      {tld} = psl.parse(url.hostname);
+    } catch (ex) {
+      log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + paramValue});
+    }
+
+    // TEMP WORKAROUND: if the region passed in the X-Region header doesn't
+    // match up with the region that the public suffix indicates, throw an error.
+    let XRegion = req.headers["x-region"];
+    if (PUBLIC_SUFFIX_TO_REGION.has(tld)) {
+      if (PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion) {
+        throw new Error(ERR_REGION_MISMATCH);
+      }
+    }
+
+    // Support the eBay campaign.
+    if (XTargetURL.startsWith("https://www.ebay.")) {
+      options.query.sub1 = "ebay";
+    }
+
+    // Extract the `ctag` parameter from the target URL.
+    let tag = url.searchParams.get("ref") || url.searchParams.get("crlp");
+    if (tag) {
+      query.push("ctag=" + encodeURIComponent(tag.replace("pd_sl_a", "")));
+    }
   }
 
   if (options.url == process.env["WEATHER_CONDITIONS_URL"]) {
@@ -118,19 +153,6 @@ const createTarget = (req, options) => {
         let header = parts[1];
         paramValue = (req.headers[header] || "");
         if (header == "x-target-url") {
-          // Extract the `ctag` parameter from the target URL.
-          if (paramValue) {
-            let url;
-            try {
-              url = new URL(paramValue);
-            } catch (ex) {
-              log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + paramValue});
-            }
-            let tag = url.searchParams.get("ref") || url.searchParams.get("crlp");
-            if (tag) {
-              query.push("ctag=" + encodeURIComponent(tag.replace("pd_sl_a", "")));
-            }
-          }
           paramValue = encodeURIComponent(paramValue);
         } else {
           paramValue = paramValue.toLowerCase();
@@ -173,6 +195,7 @@ app.use("/cid/:cid", (req, res) => {
   }
 
   let target = createTarget(req, campaign);
+
   log.info("server", { msg: `forwarding ${cid} to ${target}` });
 
   forwardRequest(req, res, {
@@ -218,7 +241,8 @@ app.use(sentry.Handlers.errorHandler());
 app.use(function errorHandler(err, req, res, next) {
   let msg = err + "";
   log.error("server", { msg });
-  res.status(500).send({
+  // If we detected a region mismatch, mark the request with a different code.
+  res.status(msg.includes(ERR_REGION_MISMATCH) ? 412 : 500).send({
     status: "error",
     "details": {
       msg,
