@@ -56,6 +56,7 @@ const CONFIG = {
   weather_conditions: {
     url: process.env["WEATHER_CONDITIONS_URL"],
     query: {
+      // Consumers should pass a `locationKey` parameter in the URL.
       apikey: process.env["WEATHER_KEY"],
     }
   },
@@ -66,6 +67,13 @@ const CONFIG = {
       apikey: process.env["WEATHER_KEY"],
     }
   },
+  weather_alerts: {
+    url: process.env["WEATHER_ALERTS_URL"],
+    query: {
+      // Consumers should pass a `locationKey` parameter in the URL.
+      apikey: process.env["WEATHER_KEY"],
+    }
+  }
 };
 const PUBLIC_SUFFIX_TO_REGION = new Map([
   ["ca", "ca"],
@@ -136,9 +144,12 @@ const createTarget = (req, options) => {
     }
   }
 
-  if (options.url == process.env["WEATHER_CONDITIONS_URL"]) {
-    // The weather conditions API requires a dynamic key to be in the URL path
-    // rather than in the query paramters.
+  // The weather conditions and alerts APIs require a dynamic key to be in the
+  // URL path rather than in the query paramters.
+  if (
+    options.url == process.env["WEATHER_CONDITIONS_URL"] ||
+    options.url == process.env["WEATHER_ALERTS_URL"]
+  ) {
     if (options.query.locationKey) {
       options.url = `${options.url}${options.query.locationKey}.json`;
     } else {
