@@ -159,6 +159,9 @@ const createTarget = (req, options) => {
 
   for (let paramName of Object.getOwnPropertyNames(options.query)) {
     let paramValue = options.query[paramName];
+    if (paramName == "q") {
+      paramValue = encodeURIComponent(paramValue);
+    }
     let parts = paramValue.toLowerCase().split(SPECIAL_ARG_REGEXP);
     if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
       if (parts[0] == "header") {
