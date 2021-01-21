@@ -36,6 +36,6 @@
   "scripts": {
     "coverage": "nyc --reporter=text --reporter=html mocha",
     "start": "node server.js",
-    "test": "./node_modules/mocha/bin/mocha test/test_*.js"
+    "test": "./node_modules/mocha/bin/mocha test/test_*.js; ./node_modules/eslint/bin/eslint.js ."
   }
 }

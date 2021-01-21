@@ -55,7 +55,7 @@ async function checkServerLogs(server, messages, controller = { stop: null }) {
       let match =
         message instanceof RegExp
           ? message.test(data)
-          : data.indexOf(message) > -1;
+          : data.toLowerCase().indexOf(message.toLowerCase()) > -1;
       if (match) {
         matches.push(data);
       }
