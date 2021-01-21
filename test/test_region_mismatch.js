@@ -1,20 +1,20 @@
+/* globals describe, it */
 const Assert = require("assert");
-const { withServer, sendForwardRequest, PORT, STOP } = require("./utils");
+const { withServer, sendForwardRequest, PORT } = require("./utils");
 
-describe("Top Sites forward request endpoint - region mismatches", function() {
-
-  it("should fail requests with non-matching regions", async function() {
-    return withServer(async server => {
+describe("Top Sites forward request endpoint - region mismatches", function () {
+  it("should fail requests with non-matching regions", async function () {
+    return withServer(async (server) => {
       const cid = "amzn_2020_1";
       let data = await sendForwardRequest(server, {
         url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "X-Region": "de",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.ca"
+          "X-Target-URL": "https://www.example.ca",
         },
         expectedStatusCode: 412,
-        waitForServerLogMessage: "region mismatch"
+        waitForServerLogMessage: "region mismatch",
       });
 
       Assert.ok(data);
@@ -24,10 +24,10 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "ca",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.co.uk"
+          "X-Target-URL": "https://www.example.co.uk",
         },
         expectedStatusCode: 412,
-        waitForServerLogMessage: "region mismatch"
+        waitForServerLogMessage: "region mismatch",
       });
 
       Assert.ok(data);
@@ -37,10 +37,10 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "gb",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.com.au"
+          "X-Target-URL": "https://www.example.com.au",
         },
         expectedStatusCode: 412,
-        waitForServerLogMessage: "region mismatch"
+        waitForServerLogMessage: "region mismatch",
       });
 
       Assert.ok(data);
@@ -50,10 +50,10 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "ca",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.com"
+          "X-Target-URL": "https://www.example.com",
         },
         expectedStatusCode: 412,
-        waitForServerLogMessage: "region mismatch"
+        waitForServerLogMessage: "region mismatch",
       });
 
       Assert.ok(data);
@@ -63,10 +63,10 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "fr",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.de"
+          "X-Target-URL": "https://www.example.de",
         },
         expectedStatusCode: 412,
-        waitForServerLogMessage: "region mismatch"
+        waitForServerLogMessage: "region mismatch",
       });
 
       Assert.ok(data);
@@ -76,27 +76,27 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "de",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.fr"
+          "X-Target-URL": "https://www.example.fr",
         },
         expectedStatusCode: 412,
-        waitForServerLogMessage: "region mismatch"
+        waitForServerLogMessage: "region mismatch",
       });
 
       Assert.ok(data);
     });
   });
 
-  it("should should forward requests that have matching regions (sanity check)", async function() {
-    return withServer(async server => {
+  it("should should forward requests that have matching regions (sanity check)", async function () {
+    return withServer(async (server) => {
       const cid = "amzn_2020_1";
       let data = await sendForwardRequest(server, {
         url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
           "X-Region": "ca",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.ca"
+          "X-Target-URL": "https://www.example.ca",
         },
-        waitForServerLogMessage: `forwarding ${cid} to `
+        waitForServerLogMessage: `forwarding ${cid} to `,
       });
 
       Assert.ok(data);
@@ -106,9 +106,9 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "gb",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.co.uk"
+          "X-Target-URL": "https://www.example.co.uk",
         },
-        waitForServerLogMessage: `forwarding ${cid} to `
+        waitForServerLogMessage: `forwarding ${cid} to `,
       });
 
       Assert.ok(data);
@@ -118,9 +118,9 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "au",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.com.au"
+          "X-Target-URL": "https://www.example.com.au",
         },
-        waitForServerLogMessage: `forwarding ${cid} to `
+        waitForServerLogMessage: `forwarding ${cid} to `,
       });
 
       Assert.ok(data);
@@ -130,9 +130,9 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "us",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.com"
+          "X-Target-URL": "https://www.example.com",
         },
-        waitForServerLogMessage: `forwarding ${cid} to `
+        waitForServerLogMessage: `forwarding ${cid} to `,
       });
 
       Assert.ok(data);
@@ -142,9 +142,9 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "de",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.de"
+          "X-Target-URL": "https://www.example.de",
         },
-        waitForServerLogMessage: `forwarding ${cid} to `
+        waitForServerLogMessage: `forwarding ${cid} to `,
       });
 
       Assert.ok(data);
@@ -154,13 +154,12 @@ describe("Top Sites forward request endpoint - region mismatches", function() {
         headers: {
           "X-Region": "fr",
           "X-Source": "newtab",
-          "X-Target-URL": "https://www.example.fr"
+          "X-Target-URL": "https://www.example.fr",
         },
-        waitForServerLogMessage: `forwarding ${cid} to `
+        waitForServerLogMessage: `forwarding ${cid} to `,
       });
 
       Assert.ok(data);
     });
   });
-
 });

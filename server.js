@@ -5,14 +5,14 @@ const psl = require("psl");
 const sentry = require("@sentry/node");
 
 const mozlog = require("mozlog")({
-  app: "topsites-proxy"
+  app: "topsites-proxy",
 });
 const log = mozlog("general");
 
 const verfile = __dirname + "/version.json";
 
 const app = express();
-const dsn = process.env["SENTRY_DSN"] || "";
+const dsn = process.env.SENTRY_DSN || "";
 if (dsn) {
   sentry.init({ dsn });
 }
@@ -25,15 +25,15 @@ const CONFIG = {
     url: `http://localhost:${process.env.PORT}/test`,
     query: {
       sub1: "amazon",
-      key: process.env["AMZN_2020_1_KEY"] || "test",
+      key: process.env.AMZN_2020_1_KEY || "test",
       cuid: "amzn_2020_1",
       // Reads the X-Region header.
       h1: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
       // Reads the X-Source header.
       h2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
       // Reads the X-Target-URL header.
-      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
-    }
+      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`,
+    },
   },
   inspect: {
     url: "https://8d90580d9eed29ad24e62f5dfa7f87e5.m.pipedream.net",
@@ -41,39 +41,39 @@ const CONFIG = {
       sub1: "amazon",
       sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
       sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
-      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
-    }
+      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`,
+    },
   },
   amzn_2020_a1: {
-    url: process.env["AMZN_2020_A1_URL"],
+    url: process.env.AMZN_2020_A1_URL,
     query: {
       sub1: "amazon",
       sub2: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-region${SPECIAL_DELIM}`,
       sub3: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-source${SPECIAL_DELIM}`,
-      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`
-    }
+      cu: `${SPECIAL_DELIM}header${SPECIAL_SEP}x-target-url${SPECIAL_DELIM}`,
+    },
   },
   weather_conditions: {
-    url: process.env["WEATHER_CONDITIONS_URL"],
+    url: process.env.WEATHER_CONDITIONS_URL,
     query: {
       // Consumers should pass a `locationKey` parameter in the URL.
-      apikey: process.env["WEATHER_KEY"],
-    }
+      apikey: process.env.WEATHER_KEY,
+    },
   },
   weather_location: {
-    url: process.env["WEATHER_LOCATION_URL"],
+    url: process.env.WEATHER_LOCATION_URL,
     query: {
       // Consumers should pass a `q` parameter in the URL.
-      apikey: process.env["WEATHER_KEY"],
-    }
+      apikey: process.env.WEATHER_KEY,
+    },
   },
   weather_alerts: {
-    url: process.env["WEATHER_ALERTS_URL"],
+    url: process.env.WEATHER_ALERTS_URL,
     query: {
       // Consumers should pass a `locationKey` parameter in the URL.
-      apikey: process.env["WEATHER_KEY"],
-    }
-  }
+      apikey: process.env.WEATHER_KEY,
+    },
+  },
 };
 const PUBLIC_SUFFIX_TO_REGION = new Map([
   ["ca", "ca"],
@@ -81,7 +81,7 @@ const PUBLIC_SUFFIX_TO_REGION = new Map([
   ["com.au", "au"],
   ["com", "us"],
   ["de", "de"],
-  ["fr", "fr"]
+  ["fr", "fr"],
 ]);
 const ERR_REGION_MISMATCH = "Public suffix region mismatch.";
 
@@ -119,7 +119,9 @@ const createTarget = (req, options) => {
       url = new URL(XTargetURL);
       tld = psl.parse(url.hostname).tld;
     } catch (ex) {
-      log.info("server", {msg: "Invalid URL passed for X-Target-URL: " + XTargetURL});
+      log.info("server", {
+        msg: "Invalid URL passed for X-Target-URL: " + XTargetURL,
+      });
     }
 
     // TEMP WORKAROUND: if the region passed in the X-Region header doesn't
@@ -127,8 +129,12 @@ const createTarget = (req, options) => {
     // When https://bugzilla.mozilla.org/show_bug.cgi?id=1685729 is resolved and
     // released, this code may be removed.
     let XRegion = req.headers["x-region"];
-    if (tld && XRegion && PUBLIC_SUFFIX_TO_REGION.has(tld) &&
-      PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion.toLowerCase()) {
+    if (
+      tld &&
+      XRegion &&
+      PUBLIC_SUFFIX_TO_REGION.has(tld) &&
+      PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion.toLowerCase()
+    ) {
       throw new Error(ERR_REGION_MISMATCH);
     }
 
@@ -147,8 +153,8 @@ const createTarget = (req, options) => {
   // The weather conditions and alerts APIs require a dynamic key to be in the
   // URL path rather than in the query paramters.
   if (
-    options.url == process.env["WEATHER_CONDITIONS_URL"] ||
-    options.url == process.env["WEATHER_ALERTS_URL"]
+    options.url == process.env.WEATHER_CONDITIONS_URL ||
+    options.url == process.env.WEATHER_ALERTS_URL
   ) {
     if (options.query.locationKey) {
       options.url = `${options.url}${options.query.locationKey}.json`;
@@ -163,7 +169,7 @@ const createTarget = (req, options) => {
     if (parts.length >= 3 && !parts.pop() && !parts.shift()) {
       if (parts[0] == "header") {
         let header = parts[1];
-        paramValue = (req.headers[header] || "");
+        paramValue = req.headers[header] || "";
         if (header == "x-target-url") {
           paramValue = encodeURIComponent(paramValue);
         } else {
@@ -179,11 +185,12 @@ const createTarget = (req, options) => {
     query.push(paramName + "=" + paramValue);
   }
   return options.url + (query.length ? "?" + query.join("&") : "");
-}
+};
 
-const pruneUserAgent = ua => {
-  return (ua || "").replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
-    .replace(/windows[^;]+;/i, "Windows NT;")
+const pruneUserAgent = (ua) => {
+  return (ua || "")
+    .replace(/\(([^;]+);.*(rv:[\d.]+)\)/i, "($1; $2)")
+    .replace(/windows[^;]+;/i, "Windows NT;");
 };
 
 app.use(sentry.Handlers.requestHandler());
@@ -191,19 +198,19 @@ app.use(sentry.Handlers.requestHandler());
 app.use("/cid/:cid", (req, res) => {
   let cid = req.params.cid && req.params.cid.trim();
   if (!cid) {
-    throw "no campaign identifier found";
+    throw new Error("No campaign identifier found");
   }
 
   cid = cid.toLowerCase();
   let campaign = CONFIG[cid];
   if (!campaign) {
-    throw "invalid campaign identifier: " + cid;
+    throw new Error("Invalid campaign identifier: " + cid);
   }
   if (!campaign.url) {
-    throw "invalid campaign, please check environment variables.";
+    throw new Error("Invalid campaign, please check environment variables.");
   }
   if ((campaign.method || "GET") != req.method) {
-    throw "invalid request method: " + req.method;
+    throw new Error("invalid request method: " + req.method);
   }
 
   let target = createTarget(req, campaign);
@@ -213,14 +220,16 @@ app.use("/cid/:cid", (req, res) => {
     target,
     headers: {
       // We omit the platform data from the user-agent string.
-      "user-agent": pruneUserAgent(req.headers["user-agent"])
-    }
+      "user-agent": pruneUserAgent(req.headers["user-agent"]),
+    },
   });
 });
 
 if ((process.env.NODE_ENV || "").startsWith("dev")) {
   app.get("/test", (req, res) => {
-    res.status(301).send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
+    res
+      .status(301)
+      .send("TEST: " + req.url + "\n" + (req.headers["user-agent"] || ""));
   });
 }
 
@@ -228,9 +237,17 @@ if ((process.env.NODE_ENV || "").startsWith("dev")) {
 app.get("/__heartbeat__", (req, res) => {
   fs.stat(verfile, (err) => {
     if (err) {
-      res.status(500).send({ "status": "error", "checks": {"version_file_exists": "error"}, "details": {} });
+      res.status(500).send({
+        status: "error",
+        checks: { version_file_exists: "error" },
+        details: {},
+      });
     } else {
-      res.send({ "status": "ok", "checks": {"version_file_exists": "ok"}, "details": {} });
+      res.send({
+        status: "ok",
+        checks: { version_file_exists: "ok" },
+        details: {},
+      });
     }
   });
 });
@@ -255,17 +272,17 @@ app.use(function errorHandler(err, req, res, next) {
   // If we detected a region mismatch, mark the request with a different code.
   res.status(msg.includes(ERR_REGION_MISMATCH) ? 412 : 500).send({
     status: "error",
-    "details": {
+    details: {
       msg,
-      sentry: res.sentry
-    }
+      sentry: res.sentry,
+    },
   });
 });
 
 // listen on the PORT env. variable
 if (process.env.PORT) {
   app.listen(process.env.PORT, () => {
-    log.info("server", {msg: "listening", port: process.env.PORT});
+    log.info("server", { msg: "listening", port: process.env.PORT });
 
     let cid = process.env.TEST;
     if (cid) {
@@ -274,17 +291,24 @@ if (process.env.PORT) {
       if (!CONFIG[cid]) {
         cid = Object.getOwnPropertyNames(CONFIG).shift();
       }
-      require("http").request({
-        host: "localhost",
-        port: process.env.PORT,
-        path: "/cid/" + cid
-      }, res => {
-        res.setEncoding("utf-8");
-        res.on("data", str => log.info("server", {msg: str}));
-        res.on("end", () => log.info("server", {msg: "test terminated."}));
-      }).end();
+      require("http")
+        .request(
+          {
+            host: "localhost",
+            port: process.env.PORT,
+            path: "/cid/" + cid,
+          },
+          (res) => {
+            res.setEncoding("utf-8");
+            res.on("data", (str) => log.info("server", { msg: str }));
+            res.on("end", () =>
+              log.info("server", { msg: "test terminated." })
+            );
+          }
+        )
+        .end();
     }
   });
 } else {
-  log.error("server", {msg: "no PORT env var"});
+  log.error("server", { msg: "no PORT env var" });
 }

@@ -21,12 +21,21 @@
     "psl": "^1.8.0"
   },
   "devDependencies": {
+    "eslint": "7.17.0",
+    "eslint-config-prettier": "7.1.0",
+    "eslint-plugin-fetch-options": "0.0.5",
+    "eslint-plugin-html": "6.1.1",
+    "eslint-plugin-mozilla": "2.9.2",
+    "eslint-plugin-no-unsanitized": "3.1.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "3.3.1",
     "mocha": "8.2.1",
-    "nyc": "15.1.0"
+    "nyc": "15.1.0",
+    "prettier": "2.2.1"
   },
   "scripts": {
     "coverage": "nyc --reporter=text --reporter=html mocha",
     "start": "node server.js",
-    "test": "./node_modules/mocha/bin/mocha test/test_*.js"
+    "test": "./node_modules/mocha/bin/mocha test/test_*.js; ./node_modules/eslint/bin/eslint.js ."
   }
 }
