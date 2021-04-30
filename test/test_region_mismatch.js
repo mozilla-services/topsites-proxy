@@ -86,7 +86,7 @@ describe("Top Sites forward request endpoint - region mismatches", function () {
     });
   });
 
-  it("should should forward requests that have matching regions (sanity check)", async function () {
+  it("should forward requests that have matching regions (sanity check)", async function () {
     return withServer(async (server) => {
       const cid = "amzn_2020_1";
       let data = await sendForwardRequest(server, {
@@ -155,6 +155,23 @@ describe("Top Sites forward request endpoint - region mismatches", function () {
           "X-Region": "fr",
           "X-Source": "newtab",
           "X-Target-URL": "https://www.example.fr",
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `,
+      });
+
+      Assert.ok(data);
+    });
+  });
+
+  it("should forward requests for domains that we're not supposed to check for", async function () {
+    return withServer(async (server) => {
+      const cid = "amzn_2020_1";
+      let data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        headers: {
+          "X-Region": "de",
+          "X-Source": "newtab",
+          "X-Target-URL": "https://www.foobar.ca",
         },
         waitForServerLogMessage: `forwarding ${cid} to `,
       });

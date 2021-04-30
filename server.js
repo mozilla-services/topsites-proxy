@@ -83,6 +83,7 @@ const PUBLIC_SUFFIX_TO_REGION = new Map([
   ["de", "de"],
   ["fr", "fr"],
 ]);
+const DOMAINS_TO_CHECK_REGION = new Set(["amazon", "ebay", "example"]);
 const ERR_REGION_MISMATCH = "Public suffix region mismatch.";
 
 /**
@@ -113,16 +114,17 @@ const createTarget = (req, options) => {
   }
 
   let XTargetURL = req.headers["x-target-url"];
-  let url, tld;
+  let url, parsedURL;
   if (XTargetURL) {
     try {
       url = new URL(XTargetURL);
-      tld = psl.parse(url.hostname).tld;
+      parsedURL = psl.parse(url.hostname);
     } catch (ex) {
       log.info("server", {
         msg: "Invalid URL passed for X-Target-URL: " + XTargetURL,
       });
     }
+    let { tld, sld } = parsedURL;
 
     // TEMP WORKAROUND: if the region passed in the X-Region header doesn't
     // match up with the region that the public suffix indicates, throw an error.
@@ -132,6 +134,7 @@ const createTarget = (req, options) => {
     if (
       tld &&
       XRegion &&
+      DOMAINS_TO_CHECK_REGION.has(sld) &&
       PUBLIC_SUFFIX_TO_REGION.has(tld) &&
       PUBLIC_SUFFIX_TO_REGION.get(tld) != XRegion.toLowerCase()
     ) {
