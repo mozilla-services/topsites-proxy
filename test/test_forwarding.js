@@ -154,10 +154,10 @@ describe("Top Sites forward request endpoint", function () {
     });
   });
 
-  it("should send to correct data for eBay campaigns", async function () {
+  it("should send to correct data for other campaigns", async function () {
     return withServer(async (server) => {
       const cid = "amzn_2020_1";
-      const targetURL =
+      let targetURL =
         "https://www.ebay.co.uk?mkevt=1&mkcid=2&mkrid=" +
         "710-158768-120484-6&keyword=conducive&crlp=123456789GB2020110611&" +
         "MT_ID=562786&device=Computers&cmpgn=216901";
@@ -175,6 +175,33 @@ describe("Top Sites forward request endpoint", function () {
       Assert.equal(
         data.trim(),
         "TEST: /test?ctag=123456789GB2020110611&sub1=ebay&" +
+          "key=xxx&cuid=" +
+          cid +
+          "&h1=uk&h2=newtab&cu=" +
+          encodeURIComponent(targetURL)
+      );
+
+      targetURL =
+        "https://www.etsy.com/ca?utm_source=admarketplace&" +
+        "utm_medium=cpc&utm_term=etsy_exact&utm_campaign=" +
+        "Search_CA_Nonbrand_AMP_Conducive&utm_ag=utmag&" +
+        "utm_custom1=123456789GB2020110611_&" +
+        "utm_content=amp_123456_12345678_creative_targetid_device_feeditemid_" +
+        "123456789GB&utm_custom2=123456";
+      data = await sendForwardRequest(server, {
+        url: `http://localhost:${PORT}/cid/${cid}`,
+        headers: {
+          "X-Region": "gb",
+          "X-Source": "newtab",
+          "X-Target-URL": targetURL,
+        },
+        waitForServerLogMessage: `forwarding ${cid} to `,
+      });
+
+      Assert.ok(data);
+      Assert.equal(
+        data.trim(),
+        "TEST: /test?ctag=123456789GB2020110611&sub1=etsy&" +
           "key=xxx&cuid=" +
           cid +
           "&h1=uk&h2=newtab&cu=" +
