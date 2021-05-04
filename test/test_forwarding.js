@@ -186,8 +186,8 @@ describe("Top Sites forward request endpoint", function () {
         "utm_medium=cpc&utm_term=etsy_exact&utm_campaign=" +
         "Search_CA_Nonbrand_AMP_Conducive&utm_ag=utmag&" +
         "utm_custom1=123456789GB2020110611_&" +
-        "utm_content=amp_218221_14988193_creative_targetid_device_feeditemid_" +
-        "318426293CA&utm_custom2=218221";
+        "utm_content=amp_123456_12345678_creative_targetid_device_feeditemid_" +
+        "123456789GB&utm_custom2=123456";
       data = await sendForwardRequest(server, {
         url: `http://localhost:${PORT}/cid/${cid}`,
         headers: {
