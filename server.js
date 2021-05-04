@@ -141,15 +141,20 @@ const createTarget = (req, options) => {
       throw new Error(ERR_REGION_MISMATCH);
     }
 
-    // Support the eBay campaign.
-    if (XTargetURL.startsWith("https://www.ebay.")) {
-      options.query.sub1 = "ebay";
-    }
+    // The `sub1` param always matches the secondary level domain name, for
+    // example `amazon` for `amazon.co.uk`.
+    options.query.sub1 = sld;
 
     // Extract the `ctag` parameter from the target URL.
-    let tag = url.searchParams.get("ref") || url.searchParams.get("crlp");
+    let tag =
+      url.searchParams.get("ref") ||
+      url.searchParams.get("crlp") ||
+      url.searchParams.get("utm_custom1");
     if (tag) {
-      query.push("ctag=" + encodeURIComponent(tag.replace("pd_sl_a", "")));
+      query.push(
+        "ctag=" +
+          encodeURIComponent(tag.replace("pd_sl_a", "").replace("_", ""))
+      );
     }
   }
 
