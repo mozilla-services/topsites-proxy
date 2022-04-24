@@ -1,4 +1,4 @@
-FROM node:12.18.4-slim
+FROM node:12.22.12-slim
 
 # add a non-privileged user for running the application
 RUN groupadd --gid 10001 app && \
